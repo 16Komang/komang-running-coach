@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#101c2d">
+<title>PaceCoach — AI Running Coach</title>
+<style>
+:root{--bg:#0b1220;--panel:#121d30;--panel2:#19263c;--line:#283750;--text:#f3f6fb;--muted:#a5b3c8;--accent:#b7f36b;--orange:#fc6c37;--danger:#ff8d8d}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 system-ui,-apple-system,Segoe UI,sans-serif}button,input,select{font:inherit}button{cursor:pointer;border:0;border-radius:12px;padding:11px 14px;font-weight:700;background:var(--accent);color:#15210a}button.secondary{background:var(--panel2);color:var(--text);border:1px solid var(--line)}button.danger{background:#482b36;color:#ffdbe0}.wrap{max-width:1120px;margin:auto;padding:22px 16px 48px}.top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:22px}.brand{display:flex;align-items:center;gap:10px;font-size:21px;font-weight:850;letter-spacing:-.5px}.logo{width:38px;height:38px;border-radius:12px;background:var(--accent);color:#15210a;display:grid;place-items:center;font-weight:900}.pill{border:1px solid var(--line);border-radius:999px;padding:5px 10px;color:var(--muted);font-size:12px}.hero{background:linear-gradient(135deg,#1c3046,#111b2d);border:1px solid var(--line);border-radius:22px;padding:24px;margin-bottom:16px}.eyebrow{color:var(--accent);font-weight:800;text-transform:uppercase;letter-spacing:1.3px;font-size:11px}.hero h1{font-size:clamp(28px,5vw,44px);line-height:1.08;letter-spacing:-1.2px;margin:9px 0 12px;max-width:650px}.hero p{color:var(--muted);max-width:660px;margin:0 0 18px}.actions{display:flex;gap:9px;flex-wrap:wrap}.grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:14px}.card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:17px;min-width:0}.span-8{grid-column:span 8}.span-4{grid-column:span 4}.span-6{grid-column:span 6}.span-12{grid-column:span 12}.card h2{font-size:16px;margin:0 0 13px}.muted{color:var(--muted)}.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.metric{background:var(--panel2);border-radius:13px;padding:12px}.metric small{display:block;color:var(--muted);font-size:11px}.metric strong{font-size:23px;display:block;margin-top:4px;letter-spacing:-.5px}.chart{height:150px;display:flex;align-items:end;gap:8px;padding:8px 0 0}.bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:end;height:100%;gap:6px}.bar{width:min(35px,80%);background:var(--accent);border-radius:7px 7px 2px 2px;min-height:3px}.bar-wrap small{font-size:10px;color:var(--muted)}.list{display:grid;gap:9px}.activity,.workout{background:var(--panel2);border-radius:12px;padding:12px;display:flex;justify-content:space-between;gap:12px;align-items:center}.activity strong,.workout strong{display:block}.activity small,.workout small{color:var(--muted)}.tag{font-size:11px;color:var(--accent);background:#2a3b2a;padding:4px 7px;border-radius:999px;white-space:nowrap}.formrow{display:flex;gap:8px;flex-wrap:wrap}.formrow input,.formrow select{background:#0b1424;color:var(--text);border:1px solid var(--line);border-radius:10px;padding:10px;min-width:0;flex:1}.notice{padding:12px;border:1px solid #415337;background:#1c2c23;border-radius:12px;color:#dff7ce;font-size:13px;margin-top:12px}.warn{border-color:#674b36;background:#30261e;color:#ffe0b8}.empty{color:var(--muted);padding:12px 0}.footer{color:#74839b;font-size:11px;margin-top:18px}.hidden{display:none!important}
+@media(max-width:760px){.span-8,.span-4,.span-6{grid-column:span 12}.wrap{padding:14px 12px 36px}.hero{padding:20px}.metrics{grid-template-columns:repeat(3,minmax(0,1fr))}.metric strong{font-size:19px}.card{padding:14px}.top{align-items:flex-start}.actions button{flex:1}.activity,.workout{align-items:flex-start}.tag{white-space:normal}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand"><div class="logo">P</div><span>PaceCoach</span><span class="pill">MVP · Beta</span></div>
+    <div id="connection" class="pill">Memeriksa koneksi…</div>
+  </header>
+  <section class="hero">
+    <div class="eyebrow">Your personal running coach</div>
+    <h1>Latihan lebih terarah.<br>Progres lebih terukur.</h1>
+    <p>Hubungkan Strava, biarkan aktivitas lari tersinkron, lalu lihat ringkasan progres dan rekomendasi latihan berdasarkan data terbarumu.</p>
+    <div class="actions">
+      <button id="connectBtn" onclick="location.href='/auth/strava'">Hubungkan Strava</button>
+      <button class="secondary" onclick="syncNow()">Sinkronkan sekarang</button>
+      <button class="secondary" onclick="refreshState()">Refresh dashboard</button>
+    </div>
+    <div id="statusNotice" class="notice hidden"></div>
+  </section>
+
+  <div class="grid">
+    <section class="card span-8">
+      <h2>Ringkasan 7 hari terakhir</h2>
+      <div class="metrics">
+        <div class="metric"><small>Jarak lari</small><strong id="km7">—</strong></div>
+        <div class="metric"><small>Sesi lari</small><strong id="runs7">—</strong></div>
+        <div class="metric"><small>Pace rata-rata*</small><strong id="pace">—</strong></div>
+      </div>
+      <div style="height:18px"></div>
+      <h2>Volume mingguan</h2>
+      <div id="chart" class="chart"></div>
+      <div class="muted" style="font-size:11px;margin-top:8px">*Pace rata-rata dari maksimal 5 aktivitas lari terbaru; dipengaruhi rute dan jenis latihan.</div>
+    </section>
+    <section class="card span-4">
+      <h2>AI Coach · Insight</h2>
+      <div id="coachStatus" class="tag">Menunggu data</div>
+      <p id="recommendation" class="muted">Hubungkan Strava untuk mendapatkan insight dari aktivitas.</p>
+      <div id="coachNote" class="muted" style="font-size:11px"></div>
+      <div style="height:14px"></div>
+      <h2>Target latihan</h2>
+      <form id="goalForm" class="list">
+        <div class="formrow"><select id="goal"><option>Konsistensi lari</option><option>5K</option><option>10K</option><option>Half marathon</option><option>Marathon</option><option>Kebugaran umum</option></select></div>
+        <div class="formrow"><input id="goalDistance" type="number" min="1" max="100" value="10" aria-label="Jarak target km"><button type="submit">Simpan</button></div>
+      </form>
+      <button class="secondary" style="width:100%;margin-top:10px" onclick="regeneratePlan()">Sesuaikan program berikutnya</button>
+      <div class="muted" style="font-size:11px;margin-top:8px">MVP memakai aturan konservatif, bukan AI medis.</div>
+    </section>
+    <section class="card span-6">
+      <h2>Program latihan minggu ini</h2>
+      <div id="planList" class="list"></div>
+    </section>
+    <section class="card span-6">
+      <h2>Aktivitas Strava terbaru</h2>
+      <div id="activityList" class="list"></div>
+    </section>
+    <section class="card span-12">
+      <h2>Status integrasi</h2>
+      <div id="integrationInfo" class="muted">Memuat status…</div>
+      <div class="actions" style="margin-top:12px">
+        <button class="secondary" onclick="showSetup()">Cara mengaktifkan webhook</button>
+        <button class="danger" onclick="disconnect()">Putuskan Strava</button>
+      </div>
+      <div id="setupInfo" class="notice warn hidden"></div>
+    </section>
+  </div>
+  <div class="footer">PaceCoach MVP · Data contoh tidak digunakan. Aktivitas berasal dari akun Strava yang memberi izin. Insight latihan bersifat informasional dan bukan nasihat medis.</div>
+</div>
+<script>
+let state = null;
+const $ = id => document.getElementById(id);
+function esc(s){return String(s ?? "").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+function km(n){return `${Number(n||0).toFixed(1)} km`;}
+function fmtDate(s){if(!s)return "Tanggal tidak tersedia";return new Date(s).toLocaleDateString("id-ID",{day:"numeric",month:"short"});}
+function fmtDuration(s){s=Number(s||0);const h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=s%60;return h?`${h}j ${m}m`:`${m}m ${String(sec).padStart(2,"0")}d`;}
+async function getJSON(url,options={}){const r=await fetch(url,{headers:{"Content-Type":"application/json"},...options});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||`Request gagal (${r.status})`);return d;}
+function showNotice(msg,warn=false){$("statusNotice").textContent=msg;$("statusNotice").classList.remove("hidden");$("statusNotice").classList.toggle("warn",warn);}
+async function refreshState(){
+  try{
+    state=await getJSON("/api/state");
+    $("connection").textContent=state.connected?`Terhubung · ${state.athlete?.firstname||"Strava"}`:"Strava belum terhubung";
+    $("connectBtn").textContent=state.connected?"Strava terhubung":"Hubungkan Strava";
+    $("connectBtn").disabled=state.connected;
+    $("km7").textContent=km(state.analysis.distance_km_7d);
+    $("runs7").textContent=state.analysis.run_count_7d;
+    $("pace").textContent=state.analysis.average_pace_text;
+    $("coachStatus").textContent=state.analysis.status;
+    $("recommendation").textContent=state.analysis.recommendation;
+    $("coachNote").textContent=state.analysis.note;
+    $("goal").value=state.plan.goal||"Konsistensi lari";
+    $("goalDistance").value=state.plan.goalDistanceKm||10;
+    renderChart(state.activities);
+    renderPlan(state.plan);
+    renderActivities(state.activities);
+    $("integrationInfo").textContent=state.connected
+      ? `Akun: ${state.athlete?.firstname||""} ${state.athlete?.lastname||""}. Aktivitas tersimpan: ${state.activities.length}. Sinkronisasi terakhir: ${state.lastSync?new Date(state.lastSync).toLocaleString("id-ID"):"belum ada"}.`
+      : "Belum terhubung. Klik Hubungkan Strava untuk memberi izin akses aktivitas.";
+  }catch(e){showNotice(e.message,true);}
+}
+function renderChart(activities){
+  const weeks=[0,1,2,3].map(w=>{const end=Date.now()-w*7*86400000;const start=end-7*86400000;return activities.filter(a=>{const t=new Date(a.start_date).getTime();return t<=end&&t>start;}).reduce((s,a)=>s+a.distance_km,0);}).reverse();
+  const max=Math.max(1,...weeks);
+  $("chart").innerHTML=weeks.map((v,i)=>`<div class="bar-wrap"><div class="bar" style="height:${Math.max(3,v/max*100)}%"></div><small>${v.toFixed(1)}k</small><small>${["3 mgg lalu","2 mgg lalu","Minggu lalu","7 hari"][i]}</small></div>`).join("");
+}
+function renderPlan(plan){
+  $("planList").innerHTML=(plan.days||[]).map(d=>`<div class="workout"><div><strong>${esc(d.type)}</strong><small>${fmtDate(d.date)} · ${Number(d.target_distance_km||0)>0?km(d.target_distance_km):"Recovery"}<br>${esc(d.notes||"")}</small></div><span class="tag">${esc(d.status||"planned")}</span></div>`).join("")||'<div class="empty">Belum ada program.</div>';
+}
+function renderActivities(activities){
+  $("activityList").innerHTML=activities.slice(0,8).map(a=>`<div class="activity"><div><strong>${esc(a.name)}</strong><small>${fmtDate(a.start_date)} · ${km(a.distance_km)} · ${fmtDuration(a.moving_time_s)}<br>Pace ${esc(pace(a.average_pace_s_km))}</small></div><a class="tag" href="${esc(a.strava_url)}" target="_blank" rel="noopener">Lihat</a></div>`).join("")||'<div class="empty">Belum ada aktivitas. Hubungkan Strava atau gunakan Sinkronkan sekarang.</div>';
+}
+function pace(sec){if(!sec)return "—";sec=Math.round(sec);return `${Math.floor(sec/60)}:${String(sec%60).padStart(2,"0")}/km`;}
+async function syncNow(){try{showNotice("Sedang mengambil aktivitas terbaru dari Strava…");const r=await getJSON("/api/sync",{method:"POST",body:"{}"});await refreshState();showNotice(`Sinkronisasi selesai. Total aktivitas tersimpan: ${r.count}.`);}catch(e){showNotice(e.message,true);}}
+$("goalForm").addEventListener("submit",async e=>{e.preventDefault();try{await getJSON("/api/plan",{method:"POST",body:JSON.stringify({goal:$("goal").value,goalDistanceKm:Number($("goalDistance").value)})});await refreshState();showNotice("Target latihan tersimpan.");}catch(err){showNotice(err.message,true);}});
+async function regeneratePlan(){if(!confirm("Sesuaikan program berdasarkan data terakhir? Program minggu ini akan dibuat ulang."))return;try{await getJSON("/api/plan/regenerate",{method:"POST",body:"{}"});await refreshState();showNotice("Program diperbarui berdasarkan aturan coaching MVP.");}catch(e){showNotice(e.message,true);}}
+async function disconnect(){if(!confirm("Putuskan akun Strava dan hapus token/aktivitas lokal dari demo ini?"))return;try{await getJSON("/api/disconnect",{method:"POST",body:"{}"});await refreshState();showNotice("Strava diputuskan.");}catch(e){showNotice(e.message,true);}}
+async function showSetup(){try{const d=await getJSON("/api/setup-status");$("setupInfo").classList.remove("hidden");$("setupInfo").textContent=`Callback OAuth: ${d.callbackUrl} | Webhook: ${d.webhookUrl} | Client credentials: ${d.clientConfigured?"sudah diisi":"belum diisi"} | Verify token: ${d.verifyTokenConfigured?"sudah diisi":"belum diisi"}. Untuk menerima webhook, aplikasi harus tersedia di URL HTTPS publik dan subscription dibuat di Strava API.`;}catch(e){showNotice(e.message,true);}}
+refreshState();
+</script>
+</body>
+</html>
